@@ -1,3 +1,152 @@
-int main(int argc, char** argv){
+#include <pthread.h>
+#include <stdio.h>
+
+#include <readline/readline.h>
+#include <readline/history.h>
+
+#include "utils.h"
+#include "common.h"
+
+#define ARG_IS(cmd) (strncmp(input, cmd, strlen(cmd)) == 0)
+
+unmgk_shm_queue *queue;
+sem_t *mutex, *items;
+
+typedef struct {
+	char path[256];
+} load_task_t;
+
+
+void *load_image_thread(void *arg) {
+	load_task_t *task = (load_task_t *) arg;
+
+	int width, height, channels;
+	unsigned char *pixels = stbi_load(task->path, &width, &height, &channels, 0);
+	if (!pixels) {
+
+		THREAD_PRINT("Erro: não foi possível carregar a imagem %s\n", task->path);
+		THREAD_PRINT("stbi_failure_reason(): %s\n", stbi_failure_reason());
+		free(task);
+		return NULL;
+	}
+
+	int img_size = width * height * channels;
+
+	sem_wait(mutex);
+	int img_position = queue->tail % QUEUE_SIZE;
+	unmgk_shm_image *img = (unmgk_shm_image *) queue->buffer[img_position];
+
+	img->size = img_size;
+	img->width = width;
+	img->height = height;
+	img->channels = channels;
+	memcpy(img->data, pixels, img_size);
+
+	queue->tail++;
+	sem_post(mutex);
+	sem_post(items);
+
+	THREAD_PRINT("[OK] %s → %dx%d, %d canais, %d bytes (pos=%d)\n",
+							task->path, width, height, channels, img_size, img_position);
+
+	stbi_image_free(pixels);
+	free(task);
+	return NULL;
+}
+
+void reset_queue(){
+	sem_wait(mutex);
+	queue->head = 0;
+	queue->tail = 0;
+	sem_post(mutex);
+}
+
+void init_shared_resources() {
+	int shm_fd = shm_open(SHM_UNMGK_QUEUE, O_CREAT | O_RDWR, 0666);
+	ftruncate(shm_fd, sizeof(unmgk_shm_queue));
+	queue = (unmgk_shm_queue*)mmap(NULL, sizeof(unmgk_shm_queue), PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
+	if (queue == MAP_FAILED) {
+		perror("mmap");
+		exit(1);
+	}
+
+	mutex = sem_open(SEM_UNMGK_MUTEX_QUEUE, O_CREAT, 0666, 1);
+	items = sem_open(SEM_UNMGK_ITEMS_QUEUE, O_CREAT, 0666, 0);
+}
+
+char *command_generator(const char *text, int state) {
+	static int list_index, len;
+	static char *commands[] = { "load", "status", "exit","reset_queue" , NULL };
+
+	if (!state) {
+		list_index = 0;
+		len = strlen(text);
+	}
+
+	char *name;
+	while ((name = commands[list_index++])) {
+		if (strncmp(name, text, len) == 0) return strdup(name);
+	}
+	return NULL;
+}
+
+char **cli_completion(const char *text, int start, int _) {
+	(void)_ ;// unused
+	rl_attempted_completion_over = 1;
+
+	if (start == 0) {
+		return rl_completion_matches(text, command_generator);
+	}
+
+	char *line = rl_line_buffer;
+	if (strncmp(line, "load ", 5) == 0) {
+		return rl_completion_matches(text, rl_filename_completion_function);
+	}
+
+	return NULL;
+}
+
+void cli_loop() {
+	rl_attempted_completion_function = cli_completion;
+
+	char *input;
+	while ((input = readline("unmgk> ")) != NULL) {
+		if (*input) add_history(input);
+
+		if (ARG_IS("exit")) {
+			free(input);
+			break;
+		} 
+		else if (ARG_IS("load ")) {
+			char *path = trim(input + strlen("load "));
+			load_task_t *task = malloc(sizeof(load_task_t));
+			strncpy(task->path, path, sizeof(task->path) - 1);
+			task->path[sizeof(task->path) - 1] = '\0';
+
+			pthread_t tid;
+			pthread_create(&tid, NULL, load_image_thread, task);
+		} 
+		else if (ARG_IS("status")) {
+			printf("Fila: head=%d, tail=%d, ocupados=%d\n",
+					queue->head, queue->tail,
+					(queue->tail - queue->head));
+		} 
+		else if (ARG_IS("reset_queue")) {
+			reset_queue();
+		} 
+		else {
+			printf("Comandos:\n"
+					">	load <imagem>\n"\
+					">	status\n"\
+					">	reset_queue\n"\
+					">	exit\n");
+		}
+
+		free(input);
+	}
+}
+int main() {
+	init_shared_resources();
+	cli_loop();
 	return 0;
 }

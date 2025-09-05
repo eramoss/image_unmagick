@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -Wall -Wextra
 
-LIBS = -lpthread
+LIBS = -lpthread -lm -lreadline
 
 SRC = worker.c sender.c
 

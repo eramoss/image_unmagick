@@ -1,12 +1,9 @@
 #pragma once
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <unistd.h>
 #include <semaphore.h>
-#include <string.h>
 
 #define SHM_UNMGK_QUEUE "/image_unmagick_shm_queue"
 #define SEM_UNMGK_MUTEX_QUEUE "/image_unmagick_mutex_sem_queue" // mutex for senders if multiples, why not multiples? :)
