@@ -51,7 +51,9 @@ void *load_image_thread(void *arg) {
 
 	int ack_id;
 	while (1) {
-		read(fd_ack, &ack_id, sizeof(ack_id));
+		if (read(fd_ack, &ack_id, sizeof(ack_id)) < 0) {
+			perror("read"); 
+		}
 		if (ack_id == img_id) {
 			THREAD_PRINT("Confirmação recebida para %s, gravado em processed_%d.png\n", task->path, ack_id);
 			break;

@@ -73,7 +73,7 @@ static inline void init_shared_resources_sender() {
 		perror("mkfifo");
 		exit(1);
 	}
-	fd_ack = open(FIFO_ACK_UNMGCK_QUEUE, O_RDONLY | O_NONBLOCK);
+	fd_ack = open(FIFO_ACK_UNMGCK_QUEUE, O_RDONLY);
 	if (fd_ack < 0) {
 		perror("open ack fifo (producer)");
 	}

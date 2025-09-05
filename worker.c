@@ -1,13 +1,5 @@
 #include <stdio.h>
-#include <stdlib.h>
-
 #include "common.h"
-
-int fd_ack;
-unmgk_shm_queue *queue;
-sem_t *mutex, *items;
-
-
 
 int main() {
 	init_shared_resources_worker();
@@ -29,13 +21,7 @@ int main() {
 		sleep(2);
 		printf("Processed img_id: %d\n", img_id);
 		
-    int fd = open(FIFO_ACK_UNMGCK_QUEUE, O_WRONLY);
-    if (fd >= 0) {
-        write(fd, &img_id, sizeof(img_id));
-        close(fd);
-    } else {
-        perror("open fifo ack");
-    }
+		write(fd_ack, &img_id, sizeof(img_id));
 	}
 
 	return 0;
