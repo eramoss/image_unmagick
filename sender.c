@@ -1,5 +1,6 @@
 #include <pthread.h>
 #include <stdio.h>
+#include <signal.h>
 
 #include <readline/readline.h>
 #include <readline/history.h>
@@ -52,7 +53,7 @@ void *load_image_thread(void *arg) {
 	while (1) {
 		read(fd_ack, &ack_id, sizeof(ack_id));
 		if (ack_id == img_id) {
-			THREAD_PRINT("Confirmação recebida para %s, gravado em processed_%d.png", task->path, ack_id);
+			THREAD_PRINT("Confirmação recebida para %s, gravado em processed_%d.png\n", task->path, ack_id);
 			break;
 		}
 		usleep(1000);
@@ -135,7 +136,22 @@ void cli_loop() {
 	}
 }
 
+void signal_handler(int signo) {
+	(void)signo; 
+	reset_and_exit();
+}
+
 int main() {
+	// Yes i know that its too much for M1, i just want to be fancy :)
+	struct sigaction sa;
+	sa.sa_handler = signal_handler;
+	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = 0;
+
+	sigaction(SIGINT, &sa, NULL);
+	sigaction(SIGTERM, &sa, NULL);
+	sigaction(SIGHUP, &sa, NULL); 
+
 	init_shared_resources_sender();
 	cli_loop();
 	return 0;
