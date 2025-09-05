@@ -3,28 +3,14 @@
 
 #include "common.h"
 
+int fd_ack;
 unmgk_shm_queue *queue;
 sem_t *mutex, *items;
 
-void init_shared_resources() {
-	int shm_fd = shm_open(SHM_UNMGK_QUEUE, O_RDWR, 0666);
-	if (shm_fd < 0) { perror("shm_open"); exit(1); }
 
-	queue = (unmgk_shm_queue *) mmap(NULL, sizeof(unmgk_shm_queue), PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
-	if (queue == MAP_FAILED) {
-		perror("mmap");
-		exit(1);
-	}
-
-	mutex = sem_open(SEM_UNMGK_MUTEX_QUEUE, 0);
-	if (!mutex) { perror("sem_open mutex"); exit(1); }
-
-	items = sem_open(SEM_UNMGK_ITEMS_QUEUE, 0);
-	if (!items) { perror("sem_open items"); exit(1); }
-}
 
 int main() {
-	init_shared_resources();
+	init_shared_resources_worker();
 
 	while (1) {
 		sem_wait(items);
@@ -35,9 +21,21 @@ int main() {
 
 		printf("Recebido imagem: %dx%d, %d canais, %d bytes (pos=%d)\n",
 				 img->width, img->height, img->channels, img->size, img_position);
-
+		
+		int img_id = queue->head;
 		queue->head++;
 		sem_post(mutex);
+
+		sleep(2);
+		printf("Processed img_id: %d\n", img_id);
+		
+    int fd = open(FIFO_ACK_UNMGCK_QUEUE, O_WRONLY);
+    if (fd >= 0) {
+        write(fd, &img_id, sizeof(img_id));
+        close(fd);
+    } else {
+        perror("open fifo ack");
+    }
 	}
 
 	return 0;

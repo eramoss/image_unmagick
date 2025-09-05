@@ -9,8 +9,6 @@
 
 #define ARG_IS(cmd) (strncmp(input, cmd, strlen(cmd)) == 0)
 
-unmgk_shm_queue *queue;
-sem_t *mutex, *items;
 
 typedef struct {
 	char path[256];
@@ -42,6 +40,7 @@ void *load_image_thread(void *arg) {
 	img->channels = channels;
 	memcpy(img->data, pixels, img_size);
 
+	int img_id = queue->tail; 
 	queue->tail++;
 	sem_post(mutex);
 	sem_post(items);
@@ -49,34 +48,24 @@ void *load_image_thread(void *arg) {
 	THREAD_PRINT("[OK] %s → %dx%d, %d canais, %d bytes (pos=%d)\n",
 							task->path, width, height, channels, img_size, img_position);
 
+	int ack_id;
+	while (1) {
+		read(fd_ack, &ack_id, sizeof(ack_id));
+		if (ack_id == img_id) {
+			THREAD_PRINT("Confirmação recebida para %s, gravado em processed_%d.png", task->path, ack_id);
+			break;
+		}
+		usleep(1000);
+	}
+
 	stbi_image_free(pixels);
 	free(task);
 	return NULL;
 }
 
-void reset_queue(){
-	sem_wait(mutex);
-	queue->head = 0;
-	queue->tail = 0;
-	sem_post(mutex);
-}
-
-void init_shared_resources() {
-	int shm_fd = shm_open(SHM_UNMGK_QUEUE, O_CREAT | O_RDWR, 0666);
-	ftruncate(shm_fd, sizeof(unmgk_shm_queue));
-	queue = (unmgk_shm_queue*)mmap(NULL, sizeof(unmgk_shm_queue), PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
-	if (queue == MAP_FAILED) {
-		perror("mmap");
-		exit(1);
-	}
-
-	mutex = sem_open(SEM_UNMGK_MUTEX_QUEUE, O_CREAT, 0666, 1);
-	items = sem_open(SEM_UNMGK_ITEMS_QUEUE, O_CREAT, 0666, 0);
-}
-
 char *command_generator(const char *text, int state) {
 	static int list_index, len;
-	static char *commands[] = { "load", "status", "exit","reset_queue" , NULL };
+	static char *commands[] = { "load", "status", "exit", "clean_exit" , NULL };
 
 	if (!state) {
 		list_index = 0;
@@ -131,22 +120,23 @@ void cli_loop() {
 					queue->head, queue->tail,
 					(queue->tail - queue->head));
 		} 
-		else if (ARG_IS("reset_queue")) {
-			reset_queue();
+		else if (ARG_IS("clean_exit")) {
+			reset_and_exit();
 		} 
 		else {
 			printf("Comandos:\n"
 					">	load <imagem>\n"\
 					">	status\n"\
-					">	reset_queue\n"\
+					">	clean_exit\n"\
 					">	exit\n");
 		}
 
 		free(input);
 	}
 }
+
 int main() {
-	init_shared_resources();
+	init_shared_resources_sender();
 	cli_loop();
 	return 0;
 }
