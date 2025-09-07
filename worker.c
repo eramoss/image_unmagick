@@ -1,5 +1,12 @@
 #include <stdio.h>
-#include "common.h"
+
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
+
+#include "shared_res.h"
+int fd_ack;
+unmgk_shm_queue *queue;
+sem_t *mutex, *items;
 
 int main() {
 	init_shared_resources_worker();
@@ -13,14 +20,14 @@ int main() {
 
 		printf("Recebido imagem: %dx%d, %d canais, %d bytes (pos=%d)\n",
 				 img->width, img->height, img->channels, img->size, img_position);
-		
+
 		int img_id = queue->head;
 		queue->head++;
 		sem_post(mutex);
 
 		sleep(2);
 		printf("Processed img_id: %d\n", img_id);
-		
+
 		write(fd_ack, &img_id, sizeof(img_id));
 	}
 

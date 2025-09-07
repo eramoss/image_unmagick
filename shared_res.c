@@ -1,41 +1,10 @@
-#pragma once
-
-#include <fcntl.h>
-#include <sys/mman.h>
-#include <unistd.h>
-#include <semaphore.h>
-#include <sys/stat.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
 
-#define SHM_UNMGK_QUEUE "/image_unmagick_shm_queue"
-#define SEM_UNMGK_MUTEX_QUEUE "/image_unmagick_mutex_sem_queue" // mutex for senders if multiples, why not multiples? :)
-#define SEM_UNMGK_ITEMS_QUEUE "/image_unmagick_items_sem_queue" // signals to workers
-#define FIFO_ACK_UNMGCK_QUEUE "/tmp/unmgk_ack_fifo"
+#include "shared_res.h"
 
-#define QUEUE_SIZE 10
-#define MAX_IMAGE_BYTES (8 * 1024 * 1024) 
-
-typedef struct {
-	int size;
-	int width;
-	int height;
-	int channels;
-	unsigned char data[];
-} unmgk_shm_image;
-
-typedef struct {
-	int head;
-	int tail; 
-	char buffer[QUEUE_SIZE][sizeof(unmgk_shm_image) + MAX_IMAGE_BYTES];
-} unmgk_shm_queue;
-
-int fd_ack;
-unmgk_shm_queue *queue;
-sem_t *mutex, *items;
-
-static inline void init_shared_resources_sender() {
+void init_shared_resources_sender() {
 	int created = 0;
 	int shm_fd = shm_open(SHM_UNMGK_QUEUE, O_CREAT | O_EXCL | O_RDWR, 0666);
 	if (shm_fd >= 0) {
@@ -79,8 +48,7 @@ static inline void init_shared_resources_sender() {
 	}
 }
 
-
-static inline void init_shared_resources_worker() {
+void init_shared_resources_worker() {
 	int shm_fd = shm_open(SHM_UNMGK_QUEUE, O_RDWR, 0666);
 	if (shm_fd < 0) { perror("shm_open"); exit(1); }
 
@@ -101,30 +69,27 @@ static inline void init_shared_resources_worker() {
 	if (fd_ack < 0) perror("open ack fifo (receiver)");
 }
 
-static inline void reset_and_exit() {
-    sem_wait(mutex);
+void reset_and_exit() {
+	sem_wait(mutex);
 
-    queue->head = 0;
-    queue->tail = 0;
+	queue->head = 0;
+	queue->tail = 0;
 
-    sem_post(mutex);
+	sem_post(mutex);
 
-    sem_close(mutex);
-    sem_close(items);
-    sem_unlink(SEM_UNMGK_MUTEX_QUEUE);
-    sem_unlink(SEM_UNMGK_ITEMS_QUEUE);
+	sem_close(mutex);
+	sem_close(items);
+	sem_unlink(SEM_UNMGK_MUTEX_QUEUE);
+	sem_unlink(SEM_UNMGK_ITEMS_QUEUE);
 
-    munmap(queue, sizeof(unmgk_shm_queue));
-    shm_unlink(SHM_UNMGK_QUEUE);
+	munmap(queue, sizeof(unmgk_shm_queue));
+	shm_unlink(SHM_UNMGK_QUEUE);
 
-    close(fd_ack);
-    unlink(FIFO_ACK_UNMGCK_QUEUE);
+	close(fd_ack);
+	unlink(FIFO_ACK_UNMGCK_QUEUE);
 
-    printf("Fila resetada e recursos limpos. Saindo...\n");
-    exit(0);
+	printf("Fila resetada e recursos limpos. Saindo...\n");
+	exit(0);
 }
 
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "stb_image_write.h"
+

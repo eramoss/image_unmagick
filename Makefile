@@ -2,8 +2,10 @@ CC = gcc
 CFLAGS = -Wall -Wextra
 
 LIBS = -lpthread -lm -lreadline
+INCLUDES = -Ithirdparty
 
-SRC = worker.c sender.c
+WORKER_SRC = worker.c shared_res.c
+SENDER_SRC = sender.c shared_res.c
 
 BUILD_DIR = build
 
@@ -15,13 +17,16 @@ all: $(BUILD_DIR) $(WORKER) $(SENDER)
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 
-$(WORKER): worker.c | $(BUILD_DIR)
-	$(CC) $(CFLAGS) -o $@ worker.c $(LIBS)
+$(WORKER): $(WORKER_SRC) | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -o $@ $(WORKER_SRC) $(LIBS) $(INCLUDES)
 
-$(SENDER): sender.c | $(BUILD_DIR)
-	$(CC) $(CFLAGS) -o $@ sender.c $(LIBS)
+$(SENDER): $(SENDER_SRC) | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -o $@ $(SENDER_SRC) $(LIBS) $(INCLUDES)
 
 clean:
 	rm -rf $(BUILD_DIR)
+
+clang_cmd:
+	bear --output $(BUILD_DIR)/compile_commands.json -- make -B
 
 .PHONY: all clean

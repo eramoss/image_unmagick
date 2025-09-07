@@ -2,14 +2,18 @@
 #include <stdio.h>
 #include <signal.h>
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 #include <readline/readline.h>
 #include <readline/history.h>
 
 #include "utils.h"
-#include "common.h"
+#include "shared_res.h"
+int fd_ack;
+unmgk_shm_queue *queue;
+sem_t *mutex, *items;
 
 #define ARG_IS(cmd) (strncmp(input, cmd, strlen(cmd)) == 0)
-
 
 typedef struct {
 	char path[256];
