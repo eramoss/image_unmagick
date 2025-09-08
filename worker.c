@@ -18,8 +18,8 @@ int main() {
 		int img_position = queue->head % QUEUE_SIZE;
 		unmgk_shm_image *img = (unmgk_shm_image *) &queue->buffer[img_position];
 
-		printf("Recebido imagem: %dx%d, %d canais, %d bytes (pos=%d)\n",
-				 img->width, img->height, img->channels, img->size, img_position);
+		printf("Recebido imagem: %dx%d, %d canais, %d bytes (pos=%d) para task: %d\n",
+				 img->width, img->height, img->channels, img->size, img_position, img->op);
 
 		int img_id = queue->head;
 		queue->head++;

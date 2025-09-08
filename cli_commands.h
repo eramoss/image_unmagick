@@ -1,7 +1,9 @@
 #pragma once
+#include "shared_res.h"
 
 typedef struct {
 	char path[256];
+	unmgk_img_op op;
 } load_task_t;
 
 typedef void (*command_func_t)(const char *args);
@@ -14,7 +16,8 @@ typedef struct {
 
 extern command_entry_t commands[];
 
-void cmd_load(const char *args);
+void cmd_neg(const char *args);
+void cmd_slice(const char *args);
 void cmd_status(const char *args);
 void cmd_exit(const char *args);
 void cmd_clean_exit(const char *args);

@@ -38,6 +38,7 @@ void *load_image_thread(void *arg) {
 	img->width = width;
 	img->height = height;
 	img->channels = channels;
+	img->op = task->op;
 	memcpy(img->data, pixels, img_size);
 
 	int img_id = queue->tail; 

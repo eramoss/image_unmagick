@@ -14,7 +14,14 @@
 #define QUEUE_SIZE 10
 #define MAX_IMAGE_BYTES (8 * 1024 * 1024) 
 
+typedef enum {
+	UNMGK_NEG,
+	UNMGK_SLICE,
+	UNMGK_UNKNOWN_OP
+} unmgk_img_op;
+
 typedef struct {
+	unmgk_img_op op;
 	int size;
 	int width;
 	int height;
