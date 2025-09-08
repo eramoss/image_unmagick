@@ -29,10 +29,7 @@ char **cli_completion(const char *text, int start, int _) {
 		return rl_completion_matches(text, command_generator);
 	}
 
-	char *line = rl_line_buffer;
-	if (strncmp(line, "load ", 5) == 0) {
-		return rl_completion_matches(text, rl_filename_completion_function);
-	}
+	return rl_completion_matches(text, rl_filename_completion_function);
 
 	return NULL;
 }
