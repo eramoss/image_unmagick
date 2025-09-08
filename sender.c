@@ -13,15 +13,12 @@ int fd_ack;
 unmgk_shm_queue *queue;
 sem_t *mutex, *items;
 
-#define ARG_IS(cmd) (strncmp(input, cmd, strlen(cmd)) == 0)
-
 void *load_image_thread(void *arg) {
 	load_task_t *task = (load_task_t *) arg;
 
 	int width, height, channels;
 	unsigned char *pixels = stbi_load(task->path, &width, &height, &channels, 0);
 	if (!pixels) {
-
 		THREAD_PRINT("Erro: não foi possível carregar a imagem %s\n", task->path);
 		THREAD_PRINT("stbi_failure_reason(): %s\n", stbi_failure_reason());
 		free(task);
