@@ -5,7 +5,7 @@ LIBS = -lpthread -lm -lreadline
 INCLUDES = -Ithirdparty
 
 WORKER_SRC = worker.c shared_res.c
-SENDER_SRC = sender.c shared_res.c
+SENDER_SRC = sender.c shared_res.c cli.c cli_commands.c
 
 BUILD_DIR = build
 

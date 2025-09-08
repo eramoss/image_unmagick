@@ -1,6 +1,10 @@
 #include <string.h>
 #include <ctype.h>
 
+#include <stdio.h> // rl needs FILE
+#include <readline/readline.h>
+#include <readline/history.h>
+
 // fancy to print inside threads and dont mess up with rl
 #define THREAD_PRINT(fmt, ...)   \
 do {                             \
