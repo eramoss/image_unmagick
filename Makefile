@@ -29,4 +29,7 @@ clean:
 clang_cmd:
 	bear --output $(BUILD_DIR)/compile_commands.json -- make -B
 
+tmux_run:	$(BUILD_DIR) $(WORKER) $(SENDER)
+	tmux split-window -hd "build/worker" & build/sender
+
 .PHONY: all clean
