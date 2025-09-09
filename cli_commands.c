@@ -10,10 +10,10 @@
 
 command_entry_t commands[] = {
 	{"neg_img", cmd_neg, "neg_img <imagem>"},
-	{"slice_img", cmd_slice, "slice_img <imagem>"},
+	{"threshold_img", cmd_threshold, "threshold_img <imagem>"},
 	{"status", cmd_status, "status"},
 	{"exit", cmd_exit, "exit"},
-	{"clean_exit", cmd_clean_exit, "clean up shared res and exit"},
+	{"clean_exit", cmd_clean_exit, "clean_exit"},
 	{NULL, NULL, NULL} // sentinel
 };
 
@@ -23,17 +23,17 @@ void cmd_neg(const char *args) {
 	load_task_t *task = malloc(sizeof(load_task_t));
 	strncpy(task->path, path, sizeof(task->path) - 1);
 	task->path[sizeof(task->path) - 1] = '\0';
-	task->op = UNMGK_NEG;
+	task->op = UNMGK_NEGATIVE;
 
 	pthread_t tid;
 	pthread_create(&tid, NULL, load_image_thread, task);
 }
-void cmd_slice(const char *args) {
+void cmd_threshold(const char *args) {
 	char *path = trim((char *)args);
 	load_task_t *task = malloc(sizeof(load_task_t));
 	strncpy(task->path, path, sizeof(task->path) - 1);
 	task->path[sizeof(task->path) - 1] = '\0';
-	task->op = UNMGK_SLICE;
+	task->op = UNMGK_THRESHOLD;
 
 	pthread_t tid;
 	pthread_create(&tid, NULL, load_image_thread, task);

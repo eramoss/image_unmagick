@@ -43,8 +43,8 @@ void *load_image_thread(void *arg) {
 	sem_post(mutex);
 	sem_post(items);
 
-	THREAD_PRINT("[OK] %s → %dx%d, %d canais, %d bytes (pos=%d)\n",
-							task->path, width, height, channels, img_size, img_position);
+	THREAD_PRINT("[OK] %s → %dx%d, %d canais, %d bytes (pos=%d), op = %d\n",
+							task->path, width, height, channels, img_size, img_position, task->op);
 
 	int ack_id;
 	while (1) {

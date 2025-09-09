@@ -15,13 +15,14 @@
 #define MAX_IMAGE_BYTES (8 * 1024 * 1024) 
 
 typedef enum {
-	UNMGK_NEG,
-	UNMGK_SLICE,
+	UNMGK_NEGATIVE,
+	UNMGK_THRESHOLD,
 	UNMGK_UNKNOWN_OP
 } unmgk_img_op;
 
 typedef struct {
 	unmgk_img_op op;
+	void* args_op;
 	void* params;
 	int size;
 	int width;
@@ -29,6 +30,11 @@ typedef struct {
 	int channels;
 	unsigned char data[];
 } unmgk_shm_image;
+
+typedef struct {
+	int slice_t1;
+	int slice_t2;
+} args_threshold;
 
 typedef struct {
 	int head;

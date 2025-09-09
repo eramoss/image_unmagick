@@ -17,7 +17,7 @@ typedef struct {
 extern command_entry_t commands[];
 
 void cmd_neg(const char *args);
-void cmd_slice(const char *args);
+void cmd_threshold(const char *args);
 void cmd_status(const char *args);
 void cmd_exit(const char *args);
 void cmd_clean_exit(const char *args);
