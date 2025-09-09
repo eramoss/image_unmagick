@@ -10,7 +10,7 @@
 
 command_entry_t commands[] = {
 	{"neg_img", cmd_neg, "neg_img <imagem>"},
-	{"threshold_img", cmd_threshold, "threshold_img <imagem>"},
+	{"threshold_img", cmd_threshold, "threshold_img <imagem> <lower_bound> <upper_bound>"},
 	{"status", cmd_status, "status"},
 	{"exit", cmd_exit, "exit"},
 	{"clean_exit", cmd_clean_exit, "clean_exit"},
@@ -28,12 +28,31 @@ void cmd_neg(const char *args) {
 	pthread_t tid;
 	pthread_create(&tid, NULL, load_image_thread, task);
 }
+
 void cmd_threshold(const char *args) {
-	char *path = trim((char *)args);
+	char path[256];
+	int lower, upper;
+
+	if (sscanf(args, "%255s %d %d", path, &lower, &upper) != 3) {
+		fprintf(stderr, "Uso correto: threshold_img <imagem> <lower_bound> <upper_bound>\n");
+		return;
+	}
+
 	load_task_t *task = malloc(sizeof(load_task_t));
+	if (!task) {
+		perror("malloc");
+		return;
+	}
+
 	strncpy(task->path, path, sizeof(task->path) - 1);
 	task->path[sizeof(task->path) - 1] = '\0';
 	task->op = UNMGK_THRESHOLD;
+
+	args_op_t params ={0};
+	params.slice_t1_thr = lower;
+	params.slice_t2_thr = upper;
+
+	task->args_op = params;
 
 	pthread_t tid;
 	pthread_create(&tid, NULL, load_image_thread, task);

@@ -47,11 +47,11 @@ void threshold_sliced(void* args){
 
 	unsigned char *src = task->img->data;
 	unsigned char *dest = task->output_buffer;
-	args_threshold* args_thr = (args_threshold*)task->img->args_op;
+	args_op_t args_thr = task->img->args_op;
 	for (long i = start_pixel_idx; i < end_pixel_idx; i += channels) {
 		int gray_value = (channels == 1) ? src[i] : (src[i] + src[i+1] + src[i+2]) / 3;
 
-		if (gray_value <= args_thr->slice_t1 || gray_value >= args_thr->slice_t2) {
+		if (gray_value <= args_thr.slice_t1_thr || gray_value >= args_thr.slice_t2_thr) {
 			dest[i] = 255;
 			if (channels > 1) { dest[i+1] = 255; dest[i+2] = 255; }
 		} else {

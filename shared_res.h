@@ -21,20 +21,19 @@ typedef enum {
 } unmgk_img_op;
 
 typedef struct {
+	int slice_t1_thr;
+	int slice_t2_thr;
+} args_op_t;
+
+typedef struct {
 	unmgk_img_op op;
-	void* args_op;
-	void* params;
+	args_op_t args_op;
 	int size;
 	int width;
 	int height;
 	int channels;
 	unsigned char data[];
 } unmgk_shm_image;
-
-typedef struct {
-	int slice_t1;
-	int slice_t2;
-} args_threshold;
 
 typedef struct {
 	int head;

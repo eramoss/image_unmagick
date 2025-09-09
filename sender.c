@@ -36,6 +36,7 @@ void *load_image_thread(void *arg) {
 	img->height = height;
 	img->channels = channels;
 	img->op = task->op;
+	img->args_op = task->args_op;
 	memcpy(img->data, pixels, img_size);
 
 	int img_id = queue->tail; 
