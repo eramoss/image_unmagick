@@ -4,7 +4,7 @@ CFLAGS = -Wall -Wextra
 LIBS = -lpthread -lm -lreadline
 INCLUDES = -Ithirdparty
 
-WORKER_SRC = worker.c shared_res.c
+WORKER_SRC = worker.c shared_res.c pthread_pool.c
 SENDER_SRC = sender.c shared_res.c cli.c cli_commands.c
 
 BUILD_DIR = build

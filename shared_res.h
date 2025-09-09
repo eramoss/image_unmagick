@@ -22,6 +22,7 @@ typedef enum {
 
 typedef struct {
 	unmgk_img_op op;
+	void* params;
 	int size;
 	int width;
 	int height;
