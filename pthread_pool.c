@@ -116,6 +116,8 @@ void *worker_thread(void *arg) {
 		pthread_cond_signal(&task->done_cnd);
 		pool->remaining--;
 		pthread_mutex_unlock(&pool->q_mtx);
+
+		free(t);
 	}
 	return NULL;
 }
