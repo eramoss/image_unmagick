@@ -41,6 +41,8 @@ void *load_image_thread(void *arg) {
 
 	int img_id = queue->tail; 
 	queue->tail++;
+
+	stbi_image_free(pixels);
 	sem_post(mutex);
 	sem_post(items);
 
@@ -59,7 +61,6 @@ void *load_image_thread(void *arg) {
 		usleep(1000);
 	}
 
-	stbi_image_free(pixels);
 	free(task);
 	return NULL;
 }
