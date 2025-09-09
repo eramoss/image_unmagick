@@ -26,7 +26,7 @@ $(SENDER): $(SENDER_SRC) | $(BUILD_DIR)
 clean:
 	rm -rf $(BUILD_DIR)
 
-clang_cmd:
+clang_cmd: $(BUILD_DIR)
 	bear --output $(BUILD_DIR)/compile_commands.json -- make -B
 
 tmux_run:	$(BUILD_DIR) $(WORKER) $(SENDER)
