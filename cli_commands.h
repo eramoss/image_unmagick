@@ -2,9 +2,9 @@
 #include "shared_res.h"
 
 typedef struct {
-    char path[256];
-    int op;
-    args_op_t args_op;
+	char path[256];
+	int op;
+	args_op_t args_op;
 } load_task_t;
 
 typedef void (*command_func_t)(const char *args);

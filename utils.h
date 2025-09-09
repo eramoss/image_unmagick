@@ -6,15 +6,15 @@
 #include <readline/history.h>
 
 // fancy to print inside threads and dont mess up with rl
-#define THREAD_PRINT(fmt, ...)   \
-do {                             \
-	rl_save_prompt();              \
-	rl_replace_line("", 0);        \
-	rl_redisplay();                \
-	printf(fmt, ##__VA_ARGS__);    \
-	fflush(stdout);                \
-	rl_restore_prompt();           \
-	rl_redisplay();                \
+#define THREAD_PRINT(fmt, ...)	\
+do {														\
+	rl_save_prompt();							\
+	rl_replace_line("", 0);				\
+	rl_redisplay();								\
+	printf(fmt, ##__VA_ARGS__);		\
+	fflush(stdout);								\
+	rl_restore_prompt();					\
+	rl_redisplay();								\
 } while(0)
 
 static inline char *trim(char *str) {

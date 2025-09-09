@@ -86,36 +86,36 @@ void pool_end(unmgk_pool_t* pool){
 }
 
 void *worker_thread(void *arg) {
-    unmgk_pool_t *pool = (unmgk_pool_t *)arg;
-    while (1) {
-        pthread_mutex_lock(&pool->q_mtx);
-        while (!pool->shutdown && pool->queue_tail == NULL) {
-            pthread_cond_wait(&pool->q_cnd, &pool->q_mtx);
-        }
+	unmgk_pool_t *pool = (unmgk_pool_t *)arg;
+	while (1) {
+		pthread_mutex_lock(&pool->q_mtx);
+		while (!pool->shutdown && pool->queue_tail == NULL) {
+			pthread_cond_wait(&pool->q_cnd, &pool->q_mtx);
+		}
 
-        if (pool->shutdown) {
-            pthread_mutex_unlock(&pool->q_mtx);
-            break;
-        }
+		if (pool->shutdown) {
+			pthread_mutex_unlock(&pool->q_mtx);
+			break;
+		}
 
-        unmgk_pool_queue_t *task = pool->queue_tail;
-        pool->queue_tail = task->next;
-        if (pool->queue_tail == NULL) {
-            pool->queue_head = NULL; // dont need to free now, use pool_end
-        }
+		unmgk_pool_queue_t *task = pool->queue_tail;
+		pool->queue_tail = task->next;
+		if (pool->queue_tail == NULL) {
+			pool->queue_head = NULL; // dont need to free now, use pool_end
+		}
 
-        pthread_mutex_unlock(&pool->q_mtx);
+		pthread_mutex_unlock(&pool->q_mtx);
 
-        unmgk_task_t *t = (unmgk_task_t *)task->task;
-        if (t && t->fn) {
-            t->fn(t->arg);
-        }
+		unmgk_task_t *t = (unmgk_task_t *)task->task;
+		if (t && t->fn) {
+			t->fn(t->arg);
+		}
 
-        pthread_mutex_lock(&pool->q_mtx);
-        task->done = 1;
-        pthread_cond_signal(&task->done_cnd);
-        pool->remaining--;
-        pthread_mutex_unlock(&pool->q_mtx);
-    }
-    return NULL;
+		pthread_mutex_lock(&pool->q_mtx);
+		task->done = 1;
+		pthread_cond_signal(&task->done_cnd);
+		pool->remaining--;
+		pthread_mutex_unlock(&pool->q_mtx);
+	}
+	return NULL;
 }

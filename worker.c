@@ -39,7 +39,7 @@ void negative_sliced(void* args){
 }
 void threshold_sliced(void* args){
 	slice_task_t *task = (slice_task_t *)args;
-	
+
 	int width = task->img->width;
 	int channels = task->img->channels;
 	long start_pixel_idx = (long)task->start_row * width * channels;
@@ -100,8 +100,8 @@ void process_img_thread(void* args){
 
 	for (int i = 0; i < NTASKS; i++) {
 		unmgk_task_t *pt = malloc(sizeof(*pt));
-    pt->fn = fn;
-    pt->arg = &slice_tasks[i];
+		pt->fn = fn;
+		pt->arg = &slice_tasks[i];
 		slice_tasks[i].img = img;
 		slice_tasks[i].output_buffer = output_pixels;
 		slice_tasks[i].start_row = i * rows_per_thread;
@@ -111,7 +111,7 @@ void process_img_thread(void* args){
 		tasks_pool_ids[i] = id;
 	}
 	pool_wait(task->pool, tasks_pool_ids);
-	
+
 	char output_filename[256];
 	sprintf(output_filename, "processed_%d.png", task->img_id);
 	stbi_write_png(output_filename, img->width, img->height, img->channels, output_pixels, img->width * img->channels);
