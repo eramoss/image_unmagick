@@ -12,7 +12,7 @@
 #define FIFO_ACK_UNMGCK_QUEUE "/tmp/unmgk_ack_fifo"
 
 #define QUEUE_SIZE 10
-#define MAX_IMAGE_BYTES (8 * 1024 * 1024) 
+#define MAX_IMAGE_BYTES (512 * 1024 * 1024) //512MB
 
 typedef enum {
 	UNMGK_NEGATIVE,
