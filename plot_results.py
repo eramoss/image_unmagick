@@ -1,40 +1,63 @@
+
 import pandas as pd
 import matplotlib.pyplot as plt
+import glob
+import os
 
-df = pd.read_csv("results.csv", header=None,
-                 names=["width","height","channels","NTHREADS","NTASKS","time_ms"])
+files = glob.glob("assets/results_*.csv")
 
-agg = df.groupby(["width","height","NTHREADS","NTASKS"]).agg(
-    mean_time=("time_ms","mean"),
-    std_time=("time_ms","std"),
-    runs=("time_ms","count")
-).reset_index()
+data = []
+for file in files:
+    base = os.path.basename(file)
+    parts = base.replace("results_", "").replace(".csv", "").split("_")
+    nth, ntasks = int(parts[0]), int(parts[1])
 
-print("Resumo das execuções (médias):")
-print(agg.head())
+    df = pd.read_csv(file, header=None,
+                     names=["width","height","channels","NTHREADS","NTASKS","time_ms"])
 
-for size in agg.groupby(["width","height"]).groups.keys():
-    subset = agg[(agg["width"]==size[0]) & (agg["height"]==size[1])]
-    plt.errorbar(subset["NTHREADS"], subset["mean_time"],
-                 yerr=subset["std_time"], fmt="-o", capsize=5,
-                 label=f"{size[0]}x{size[1]}")
+    mean = df["time_ms"].mean()
+    std = df["time_ms"].std()
+    runs = len(df)
 
-plt.xlabel("Número de Threads")
-plt.ylabel("Tempo médio de processamento (ms)")
-plt.title("Escalabilidade por Threads (com média de execuções)")
-plt.legend()
+    data.append([nth, ntasks, mean, std, runs])
+
+agg = pd.DataFrame(data, columns=["NTHREADS","NTASKS","mean_time","std_time","runs"])
+agg = agg.sort_values(["NTHREADS","NTASKS"]).reset_index(drop=True)
+
+print("Resumo das execuções:")
+print(agg)
+
+baseline = agg[(agg["NTHREADS"]==32) & (agg["NTASKS"]==32)]["mean_time"].values[0]
+
+agg["speedup"] = baseline / agg["mean_time"]
+agg["efficiency"] = agg["speedup"] / (agg["NTHREADS"]/16)
+
+plt.errorbar(
+    agg.index, agg["mean_time"], yerr=agg["std_time"],
+    fmt="o-", capsize=5
+)
+plt.xticks(agg.index, [f"{r.NTHREADS}×{r.NTASKS}" for _,r in agg.iterrows()], rotation=45)
+plt.ylabel("Tempo médio (ms)")
+plt.title("Tempo de processamento por configuração")
 plt.grid(True)
+plt.tight_layout()
+plt.savefig("tempo_config.png", dpi=150)
 plt.show()
 
-for size in agg.groupby(["width","height"]).groups.keys():
-    subset = agg[(agg["width"]==size[0]) & (agg["height"]==size[1])]
-    plt.errorbar(subset["NTASKS"], subset["mean_time"],
-                 yerr=subset["std_time"], fmt="-s", capsize=5,
-                 label=f"{size[0]}x{size[1]}")
+plt.bar(agg.index, agg["speedup"])
+plt.xticks(agg.index, [f"{r.NTHREADS}×{r.NTASKS}" for _,r in agg.iterrows()], rotation=45)
+plt.ylabel("Speedup (baseline 16×32)")
+plt.title("Speedup por configuração")
+plt.grid(True, axis="y")
+plt.tight_layout()
+plt.savefig("speedup_config.png", dpi=150)
+plt.show()
 
-plt.xlabel("Número de Tasks (fatias)")
-plt.ylabel("Tempo médio de processamento (ms)")
-plt.title("Efeito do particionamento em Tasks (com média de execuções)")
-plt.legend()
+plt.plot(agg.index, agg["efficiency"], "s-")
+plt.xticks(agg.index, [f"{r.NTHREADS}×{r.NTASKS}" for _,r in agg.iterrows()], rotation=45)
+plt.ylabel("Eficiência (%)")
+plt.title("Eficiência de paralelização")
 plt.grid(True)
+plt.tight_layout()
+plt.savefig("eficiencia_config.png", dpi=150)
 plt.show()
