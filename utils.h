@@ -1,5 +1,6 @@
 #include <string.h>
 #include <ctype.h>
+#include <time.h>
 
 #include <stdio.h> // rl needs FILE
 #include <readline/readline.h>
@@ -28,6 +29,12 @@ static inline char *trim(char *str) {
 	*(end+1) = '\0';
 
 	return str;
+}
+
+static inline double now_ms() {
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return ts.tv_sec * 1000.0 + ts.tv_nsec / 1e6;
 }
 
 
