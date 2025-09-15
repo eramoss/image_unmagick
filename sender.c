@@ -1,6 +1,7 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <signal.h>
+#include <stdlib.h>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -56,6 +57,9 @@ void *load_image_thread(void *arg) {
 		}
 		if (ack_id == img_id) {
 			THREAD_PRINT("Confirmação recebida para %s, gravado em processed_%d.png\n", task->path, ack_id);
+			char cmd [256] = {0};
+			sprintf(cmd, "xdg-open processed_%d.png", img_id);
+			system(cmd);
 			break;
 		}
 		usleep(1000);
