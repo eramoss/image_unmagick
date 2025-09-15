@@ -79,10 +79,10 @@ typedef struct {
   unmgk_shm_image *img;
   int img_id;
   unmgk_pool_t *pool;
-} task_t;
+} process_task_t;
 
 void process_img_thread(void *args) {
-  task_t *task = (task_t *)args;
+  process_task_t *task = (process_task_t *)args;
   unmgk_shm_image *img = task->img;
 
   double start = now_ms();
@@ -115,7 +115,7 @@ void process_img_thread(void *args) {
   int rows_per_thread = img->height / NTASKS;
 
   for (int i = 0; i < NTASKS; i++) {
-    unmgk_task_t *pt = malloc(sizeof(*pt));
+    unmgk_pool_task_t *pt = malloc(sizeof(*pt));
     pt->fn = fn;
     pt->arg = &slice_tasks[i];
     slice_tasks[i].img = img;
@@ -167,12 +167,12 @@ int main() {
 
     int img_id = queue->head;
     queue->head++;
-    task_t *arg = malloc(sizeof(*arg));
+    process_task_t *arg = malloc(sizeof(*arg));
     arg->img = img;
     arg->img_id = img_id;
     arg->pool = pool;
 
-    unmgk_task_t *t = malloc(sizeof(*t));
+    unmgk_pool_task_t *t = malloc(sizeof(*t));
     t->fn = process_img_thread;
     t->arg = arg;
     sem_post(mutex);

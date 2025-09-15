@@ -23,7 +23,7 @@ unmgk_pool_t *pool_start(unsigned int nthreads) {
   return pool;
 }
 
-unsigned int pool_enqueue(unmgk_pool_t *pool, unmgk_task_t *task) {
+unsigned int pool_enqueue(unmgk_pool_t *pool, unmgk_pool_task_t *task) {
   unmgk_pool_queue_t *new = malloc(sizeof(unmgk_pool_queue_t));
   new->task = task;
   new->next = NULL;
