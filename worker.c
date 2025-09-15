@@ -1,8 +1,10 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
+#include "utils.h"
 #include "pthread_pool.h"
 #define NTHREADS 16
 #define NTASKS 32
@@ -69,55 +71,69 @@ typedef struct {
 } task_t;
 
 void process_img_thread(void* args){
-	task_t *task = (task_t*)args;
-	unmgk_shm_image * img = task->img;
-	printf("Thread de processamento iniciada para a imagem %d...\n", task->img_id);
+    task_t *task = (task_t*)args;
+    unmgk_shm_image * img = task->img;
 
-	unsigned char *output_pixels = malloc(img->size);
-	if (!output_pixels) {
-		perror("malloc");
-		return;
-	}
+    double start = now_ms();
+    printf("Thread de processamento iniciada para a imagem %d...\n", task->img_id);
 
-	void* fn;
-	switch(img->op){
-		case UNMGK_NEGATIVE: {
-			fn = negative_sliced;
-			break;
-		}
-		case UNMGK_THRESHOLD: {
-			fn = threshold_sliced;
-			break;
-		}
-		case UNMGK_UNKNOWN_OP:
-		default:
-			printf("Unknown operation: %d for image %d\n",task->img->op, task->img_id);
-	}
+    unsigned char *output_pixels = malloc(img->size);
+    if (!output_pixels) {
+        perror("malloc");
+        return;
+    }
 
-	unsigned int tasks_pool_ids[NTASKS + 1] = {0};
-	slice_task_t slice_tasks[NTASKS];
-	int rows_per_thread = img->height / NTASKS;
+    void* fn;
+    switch(img->op){
+        case UNMGK_NEGATIVE: {
+            fn = negative_sliced;
+            break;
+        }
+        case UNMGK_THRESHOLD: {
+            fn = threshold_sliced;
+            break;
+        }
+        default:
+            printf("Unknown operation: %d for image %d\n",task->img->op, task->img_id);
+            return;
+    }
 
-	for (int i = 0; i < NTASKS; i++) {
-		unmgk_task_t *pt = malloc(sizeof(*pt));
-		pt->fn = fn;
-		pt->arg = &slice_tasks[i];
-		slice_tasks[i].img = img;
-		slice_tasks[i].output_buffer = output_pixels;
-		slice_tasks[i].start_row = i * rows_per_thread;
-		slice_tasks[i].end_row = (i == NTASKS - 1) ? img->height : (i + 1) * rows_per_thread;
+    unsigned int tasks_pool_ids[NTASKS + 1] = {0};
+    slice_task_t slice_tasks[NTASKS];
+    int rows_per_thread = img->height / NTASKS;
 
-		unsigned int id = pool_enqueue(task->pool, pt);
-		tasks_pool_ids[i] = id;
-	}
-	pool_wait(task->pool, tasks_pool_ids);
+    for (int i = 0; i < NTASKS; i++) {
+        unmgk_task_t *pt = malloc(sizeof(*pt));
+        pt->fn = fn;
+        pt->arg = &slice_tasks[i];
+        slice_tasks[i].img = img;
+        slice_tasks[i].output_buffer = output_pixels;
+        slice_tasks[i].start_row = i * rows_per_thread;
+        slice_tasks[i].end_row = (i == NTASKS - 1) ? img->height : (i + 1) * rows_per_thread;
 
-	char output_filename[256];
-	sprintf(output_filename, "processed_%d.png", task->img_id);
-	stbi_write_png(output_filename, img->width, img->height, img->channels, output_pixels, img->width * img->channels);
+        unsigned int id = pool_enqueue(task->pool, pt);
+        tasks_pool_ids[i] = id;
+    }
+    pool_wait(task->pool, tasks_pool_ids);
 
-	printf("Thread de processamento terminada para a imagem %d, enviando ack\n", task->img_id);
-	write(fd_ack, &task->img_id, sizeof(task->img_id));
+    double end = now_ms();
+    double elapsed = end - start;
+
+    char output_filename[256];
+    sprintf(output_filename, "processed_%d.png", task->img_id);
+    stbi_write_png(output_filename, img->width, img->height, img->channels, output_pixels, img->width * img->channels);
+
+    FILE *f = fopen("results.csv", "a");
+    if (f) {
+        fprintf(f, "%d,%d,%d,%d,%d,%.2f\n",
+            img->width, img->height, img->channels,
+            NTHREADS, NTASKS, elapsed);
+        fclose(f);
+    }
+
+    printf("[Perf] Imagem %d processada em %.2f ms\n", task->img_id, elapsed);
+
+    write(fd_ack, &task->img_id, sizeof(task->img_id));
 }
 
 int main() {
